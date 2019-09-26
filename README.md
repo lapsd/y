@@ -23,7 +23,7 @@ There are a variety of ways of specifying the target yarn version for `y` comman
 
 Numeric version numbers need to be complete.
 
-- `4.9.1`
+- `1.17.3`
 
 There are labels for two especially useful versions:
 
