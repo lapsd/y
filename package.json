@@ -1,7 +1,7 @@
 {
   "name": "@lapsd/y",
   "description": "y - Interactively manage all your Yarn versions",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "author": "Daniel Lapides <lapides.daniel@gmail.com>",
   "homepage": "https://github.com/lapsd/y",
   "bugs": {
