@@ -15,9 +15,9 @@
 
 Since you probably already have `node`, the easiest way to install `y` is through `npm`:
 
-    npm install -g @danou/y
+    npm install -g @lapsd/y
 
-## Specifying Yarn versions
+## Specifying versions
 
 There are a variety of ways of specifying the target yarn version for `y` commands. Most commands use the latest matching version.
 
@@ -39,7 +39,7 @@ Removing all cached versions except the current version:
 
     y prune
 
-## Remove the installed Yarn
+## Remove the installed version
 
 This can be useful to revert to the system version of yarn (if in a different location), or if you no longer wish to use yarn, or are switching to a different way of managing it.
 

@@ -1,11 +1,11 @@
 {
-  "name": "@danou/y",
-  "description": "Interactively Manage All Your Yarn Versions",
-  "version": "1.0.10",
+  "name": "@lapsd/y",
+  "description": "y - Interactively manage all your Yarn versions",
+  "version": "1.0.11",
   "author": "Daniel Lapides <lapides.daniel@gmail.com>",
-  "homepage": "https://github.com/daniellapides/y",
+  "homepage": "https://github.com/lapsd/y",
   "bugs": {
-    "url": "https://github.com/daniellapides/y/issues"
+    "url": "https://github.com/lapsd/y/issues"
   },
   "keywords": [
     "yvm",
@@ -24,7 +24,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/daniellapides/y.git"
+    "url": "git://github.com/lapsd/y.git"
   },
   "preferGlobal": true,
   "os": [
