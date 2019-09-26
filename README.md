@@ -41,6 +41,6 @@ Removing all cached versions except the current version:
 
 ## Remove the installed version
 
-This can be useful to revert to the system version of yarn (if in a different location), or if you no longer wish to use yarn, or are switching to a different way of managing it.
+This can be useful to revert to the system version of yarn (if in a different location), or if you no longer wish to use yarn, or are switching to a different way of managing it:
 
     y uninstall
