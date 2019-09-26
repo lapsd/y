@@ -1,0 +1,533 @@
+#!/usr/bin/env bash
+
+readonly Y_FOLDER=$HOME/.y
+readonly CACHE_DIR=$Y_FOLDER/cache
+readonly VERSION="0.0.1"
+
+##### YARN INSTALL
+
+set -e
+
+reset="\033[0m"
+red="\033[31m"
+green="\033[32m"
+yellow="\033[33m"
+cyan="\033[36m"
+white="\033[37m"
+
+version=$1
+y_folder="$HOME/.y"
+cache_folder="$y_folder/cache"
+version_file="$cache_folder/$version.tar.gz"
+
+yarn_get_tar() {
+    local version=$1
+    printf "$cyan> Downloading tarball...$reset\n"
+
+    if $(echo "$version" | sed "s|[[:space:]]||g" | grep -qE "^[[:digit:]]+\.[0-9]+\.[0-9]+"); then
+        echo "it's there"
+    fi
+    # Validate that the version matches MAJOR.MINOR.PATCH to avoid garbage-in/garbage-out behavior
+    if echo "$version" | sed "s|[[:space:]]||g" | grep -qE "^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$"; then
+        # if echo $version | grep -qE "^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$"; then
+        # if echo $version | grep -qE "[0-9]+\.[0-9]+\.[0-9]+"; then
+        url="https://yarnpkg.com/downloads/$version/yarn-v$version.tar.gz"
+    else
+        printf "$red> Version number must match MAJOR.MINOR.PATCH.$reset\n"
+        exit 1
+    fi
+
+    if curl --fail -L -o "$cache_folder/$version.tar.gz" "$url"; then
+        printf "$green> Download succeeded $reset\n"
+    else
+        printf "$red> Failed to download $url $reset\n"
+        exit 1
+    fi
+}
+
+yarn_detect_profile() {
+    if [ -n "${PROFILE}" ] && [ -f "${PROFILE}" ]; then
+        echo "${PROFILE}"
+        return
+    fi
+
+    local DETECTED_PROFILE
+    DETECTED_PROFILE=''
+    local SHELLTYPE
+    SHELLTYPE="$(basename "/$SHELL")"
+
+    if [ "$SHELLTYPE" = "bash" ]; then
+        if [ -f "$HOME/.bashrc" ]; then
+            DETECTED_PROFILE="$HOME/.bashrc"
+        elif [ -f "$HOME/.bash_profile" ]; then
+            DETECTED_PROFILE="$HOME/.bash_profile"
+        fi
+    elif [ "$SHELLTYPE" = "zsh" ]; then
+        DETECTED_PROFILE="$HOME/.zshrc"
+    elif [ "$SHELLTYPE" = "fish" ]; then
+        DETECTED_PROFILE="$HOME/.config/fish/config.fish"
+    fi
+
+    if [ -z "$DETECTED_PROFILE" ]; then
+        if [ -f "$HOME/.profile" ]; then
+            DETECTED_PROFILE="$HOME/.profile"
+        elif [ -f "$HOME/.bashrc" ]; then
+            DETECTED_PROFILE="$HOME/.bashrc"
+        elif [ -f "$HOME/.bash_profile" ]; then
+            DETECTED_PROFILE="$HOME/.bash_profile"
+        elif [ -f "$HOME/.zshrc" ]; then
+            DETECTED_PROFILE="$HOME/.zshrc"
+        elif [ -f "$HOME/.config/fish/config.fish" ]; then
+            DETECTED_PROFILE="$HOME/.config/fish/config.fish"
+        fi
+    fi
+
+    if [ ! -z "$DETECTED_PROFILE" ]; then
+        echo "$DETECTED_PROFILE"
+    fi
+}
+
+yarn_link() {
+    YARN_PROFILE="$(yarn_detect_profile)"
+    printf "$cyan> Adding to \$PATH: $YARN_PROFILE$reset\n"
+    SOURCE_STR="\nexport PATH=\"\$HOME/.y/bin:\$HOME/.config/yarn/global/node_modules/.bin:\$PATH\"\n"
+
+    if [ -z "${YARN_PROFILE-}" ]; then
+        printf "$red> Profile not found. Tried ${YARN_PROFILE} (as defined in \$PROFILE), ~/.bashrc, ~/.bash_profile, ~/.zshrc, and ~/.profile.\n"
+        echo "> Create one of them and run this script again"
+        echo "> Create it (touch ${YARN_PROFILE}) and run this script again"
+        echo "   OR"
+        printf "> Append the following lines to the correct file yourself:$reset\n"
+        command printf "${SOURCE_STR}"
+    else
+        # if ! grep -q 'yarn' "$YARN_PROFILE"; then
+        if ! grep -q '/.y/' "$YARN_PROFILE"; then
+            if [[ $YARN_PROFILE == *"fish"* ]]; then
+                command fish -c 'set -U fish_user_paths $fish_user_paths ~/.y/bin'
+                printf "$cyan> We've added ~/.y/bin to your fish_user_paths universal variable\n"
+            else
+                command printf "$SOURCE_STR" >>"$YARN_PROFILE"
+                printf "$cyan> We've added the following to your $YARN_PROFILE\n"
+            fi
+        fi
+
+        echo "> If this isn't the profile of your current shell then please add the following to your correct profile:"
+        printf "   $SOURCE_STR$reset\n"
+    fi
+}
+
+yarn_remove_installed_folders() {
+    rm -rf "$y_folder/bin"
+    rm -rf "$y_folder/lib"
+    rm -rf "$y_folder/package.json"
+}
+
+function get_latest_yarn_version() {
+    local version
+    local formatted_version=""
+    local len
+    version=$(yarn info yarn@latest |
+        grep -E "{ $1: (.+)," |
+        sed 's|{ latest:||' |
+        sed 's| ||g' |
+        sed 's|,||g' |
+        sed "s|'||g" |
+        sed "s/\[32m//g" |
+        sed "s/\[39m//g" |
+        sed "s/ //g")
+
+    len=${#version}
+    for ((i = 0; i < $len; i++)); do
+        local next
+        next=($i + 1)
+        if [[ ${version:$i:1} == [0-9] ]]; then
+            formatted_version="${formatted_version}${version:$i:1}"
+        elif [[ ${version:$i:1} == "." ]]; then
+            formatted_version="${formatted_version}${version:$i:1}"
+        fi
+    done
+    echo "$formatted_version"
+}
+
+yarn_install() {
+    local version_to_install="$version"
+    local is_latest=false
+    local is_new=false
+
+    if [[ $version == "latest" ]]; then
+        version_to_install="$(get_latest_yarn_version $version)"
+        is_latest=true
+    fi
+
+    version_file="$cache_folder/$version_to_install.tar.gz"
+
+    cd $cache_folder
+
+    if [ ! -f "$version_file" ]; then
+        printf "$cyan> Installing yarn version $version_to_install $reset\n"
+        is_new=true
+        yarn_get_tar $version_to_install
+    else
+        printf "$cyan> Activating yarn version $version_to_install $reset\n"
+    fi
+
+    yarn_remove_installed_folders
+
+    temp=$(mktemp -d yarn.XXXXXXXXXX)
+    tar zxf "$cache_folder/$version_to_install.tar.gz" -C "$temp"
+    mv "$temp"/*/* $HOME/.y
+    rm -rf "$temp"
+    rm -rf ""
+
+    version=$($HOME/.y/bin/yarn --version) || (
+        printf "$red> Yarn was installed, but doesn't seem to be working :($reset\n"
+        exit 1
+    )
+
+    if [[ $is_new == true ]]; then
+        printf "$green> Successfully installed yarn $version!$reset\n"
+        printf "\nPlease open another terminal where the \`yarn\` command will now be available.$reset\n"
+    else
+        printf "$green> Successfully activated yarn $version!$reset\n"
+    fi
+}
+
+##### YARN INSTALL END
+
+### Check for dir, if not found create it using the mkdir ##
+if [ ! -d "$CACHE_DIR" ]; then 
+  mkdir -p "$CACHE_DIR"
+  yarn_link
+fi
+
+# Set by set_active_yarn
+g_active_yarn=
+
+ACTIVATE=true
+
+# ANSI escape codes
+# https://en.wikipedia.org/wiki/ANSI_escape_code
+# http://no-color.org
+# https://bixense.com/clicolors
+USE_COLOR="true"
+if [[ -n "${CLICOLOR_FORCE+defined}" && "${CLICOLOR_FORCE}" != "0" ]]; then
+  USE_COLOR="true"
+elif [[ -n "${NO_COLOR+defined}" || "${CLICOLOR}" = "0" || ! -t 1 ]]; then
+  USE_COLOR="false"
+fi
+readonly USE_COLOR
+# Select Graphic Rendition codes
+if [[ "${USE_COLOR}" = "true" ]]; then
+  # KISS and use codes rather than tput, avoid dealing with missing tput or TERM.
+  readonly SGR_RESET="\033[0m"
+  readonly SGR_FAINT="\033[2m"
+  readonly SGR_RED="\033[31m"
+  readonly SGR_CYAN="\033[36m"
+else
+  readonly SGR_RESET=
+  readonly SGR_FAINT=
+  readonly SGR_RED=
+  readonly SGR_CYAN=
+fi
+
+#
+# Log <type> <msg>
+#
+log() {
+  printf "${SGR_CYAN}%10s${SGR_RESET} : ${SGR_FAINT}%s${SGR_RESET}${SGR_RESET}\n" "$1" "$2"
+}
+
+#
+# Exit with the given <msg ...>
+#
+abort() {
+  >&2 printf "\n  ${SGR_RED}Error: %s${SGR_RESET}\n\n" "$*" && exit 1
+}
+
+#
+# Output usage information.
+#
+display_help() {
+  cat <<-EOF
+
+Usage: y [COMMAND] [args]
+
+Commands:
+  y                              Output list of versions installed
+  y latest                       Install or activate the latest yarn release
+  y <version>                    Install yarn <version> (downloading if necessary)
+  y rm|remove <version ...>      Remove the given downloaded version(s)
+  y prune                        Remove all downloaded versions except the installed version
+  y ls|list                      Output downloaded versions
+
+Options:
+  -V, -v, --version   Output version of y
+  -h, --help          Display help information
+
+EOF
+}
+
+err_no_installed_print_help() {
+  display_help
+  abort "No downloaded versions yet, see above help for commands"
+}
+
+#
+# Output y version.
+#
+display_y_version() {
+  echo "$VERSION" && exit 0
+}
+
+#
+# Synopsis: set_active_yarn
+# Checks cached downloads for a binary matching the active yarn.
+# Globals modified:
+# - g_active_yarn
+#
+function set_active_yarn() {
+  g_active_yarn=
+  local yarn_path="$(command -v yarn)"
+  if [[ -x "${yarn_path}" ]]; then
+    local installed_version=$(yarn --version)
+    installed_version=${installed_version#v}
+    for dir in "${Y_FOLDER}"/*/ ; do
+      local folder_name="${dir%/}"
+      folder_name="${folder_name##*/}"
+      if diff &> /dev/null \
+        "${Y_FOLDER}/${folder_name}/yarn" \
+        "${yarn_path}" ; then
+        g_active_yarn="${installed_version}"
+        break
+      fi
+    done
+  fi
+}
+
+#
+# Functions used when showing versions installed
+#
+enter_fullscreen() {
+  # Set cursor to be invisible
+  tput civis 2> /dev/null
+  # Save screen contents
+  tput smcup 2> /dev/null
+  stty -echo
+}
+
+leave_fullscreen() {
+  # Set cursor to normal
+  tput cnorm 2> /dev/null
+  # Restore screen contentsq
+  tput rmcup 2> /dev/null
+  stty echo
+}
+
+handle_sigint() {
+  leave_fullscreen
+  S="$?"
+  kill 0
+  exit $S
+}
+
+handle_sigtstp() {
+  leave_fullscreen
+  kill -s SIGSTOP $$
+}
+
+#
+# Display sorted versions directories paths.
+#
+display_versions_paths() {
+  find "$CACHE_DIR" -name "*.tar.gz" \
+    | sed 's|'"$CACHE_DIR"'/||g' \
+    | sed 's|/|.|' \
+    | sed 's|.tar.gz||' \
+    | sort -k 1,1 -k 2,2n -k 3,3n -k 4,4n -t .
+}
+
+#
+# Synopsis: display_cache_versions
+#
+function display_cache_versions() {
+  for folder_and_version in $(display_versions_paths); do
+    echo "${folder_and_version}"
+  done
+}
+
+#
+# Synopsis: next_version_installed selected_version
+# Output version after selected (which may be blank under some circumstances).
+#
+function next_version_installed() {
+  display_cache_versions | grep "$1" -A 1 | tail -n 1
+}
+
+#
+# Synopsis: prev_version_installed selected_version
+# Output version before selected  (which may be blank under some circumstances).
+#
+function prev_version_installed() {
+  display_cache_versions | grep "$1" -B 1 | head -n 1
+}
+
+#
+# Display installed versions with <selected>
+#
+display_versions_with_selected() {
+  selected="$1"
+  echo
+  for version in $(display_versions_paths); do
+    if test "$version" = "$selected"; then
+      printf "  ${SGR_CYAN}ο${SGR_RESET} %s\n" "$version"
+    else
+      printf "    ${SGR_FAINT}%s${SGR_RESET}\n" "$version"
+    fi
+  done
+  echo
+  printf "Use up/down arrow keys to select a version, return key to install, q to quit"
+}
+
+#
+# Display current yarn --version and others installed.
+#
+menu_select_cache_versions() {
+  set_active_yarn
+  enter_fullscreen
+  local selected="${g_active_yarn}"
+
+  clear
+  display_versions_with_selected "${selected}"
+
+  trap handle_sigint INT
+  trap handle_sigtstp SIGTSTP
+
+  ESCAPE_SEQ=$'\033'
+  UP=$'A'
+  DOWN=$'B'
+
+  while true; do
+    read -rsn 1 key
+    case "$key" in
+      $ESCAPE_SEQ)
+        # Handle ESC sequences followed by other characters, i.e. arrow keys
+        read -rsn 1 -t 1 tmp
+        if  [[ "$tmp" == "[" ]]; then
+          read -rsn 1 -t 1 arrow
+          case "$arrow" in
+            $UP)
+              clear
+              selected="$(prev_version_installed "${selected}")"
+              display_versions_with_selected "${selected}"
+              ;;
+            $DOWN)
+              clear
+              selected="$(next_version_installed "${selected}")"
+              display_versions_with_selected "${selected}"
+              ;;
+          esac
+        fi
+        ;;
+      "k")
+        clear
+        selected="$(prev_version_installed "${selected}")"
+        display_versions_with_selected "${selected}"
+        ;;
+      "j")
+        clear
+        selected="$(next_version_installed "${selected}")"
+        display_versions_with_selected "${selected}"
+        ;;
+      "q")
+        clear
+        leave_fullscreen
+        exit
+        ;;
+      "")
+        # enter key returns empty string
+        leave_fullscreen
+        [[ -n "${selected}" ]] && activate "${selected}"
+        exit
+        ;;
+    esac
+  done
+}
+
+#
+# Move up a line and erase.
+#
+erase_line() {
+  printf "\033[1A\033[2K"
+}
+
+#
+# Activate <version>
+#
+activate() {
+  local version="$1"
+  local dir="$CACHE_DIR/$version.tar.gz"
+  local installed_yarn="${Y_FOLDER}/bin/yarn"
+  
+  yarn_install version
+
+  local active_yarn="$(command -v yarn)"
+  # if [[ -e "${active_yarn}" && -e "${installed_yarn}" && "${active_yarn}" != "${installed_yarn}" ]]; then
+  #   log "installed" "$("${installed_yarn}" --version) to ${installed_yarn}"
+  #   log "active" "$("${active_yarn}" --version) at ${active_yarn}"
+  # else
+  #   log "installed" "$("${installed_yarn}" --version)"
+  # fi
+}
+
+#
+# Synopsis: display_latest_resolved_version version
+#
+function display_latest_resolved_version() {
+  local version=${1#node/}
+  # Just numbers, already resolved, no need to lookup first.
+  version="${version#v}"
+  echo "${version}"
+}
+
+#
+# Synopsis: remove_versions version ...
+#
+function remove_versions() {
+  [[ -z "$1" ]] && abort "version(s) required"
+  while [[ $# -ne 0 ]]; do
+    local version
+    version="$(display_latest_resolved_version "$1")" || break
+    if [[ -n "${version}" ]]; then
+      local dir="${CACHE_DIR}/${version}.tar.gz"
+      if [[ -s "${dir}" ]]; then
+        rm -rf "${dir}"
+        echo "$1 (${version}) was removed from cache"
+      else
+        echo "$1 (${version}) not in downloads cache"
+      fi
+    else
+      echo "No version found for '$1'"
+    fi
+    shift
+  done
+}
+
+if test $# -eq 0; then
+  test -z "$(display_versions_paths)" && err_no_installed_print_help
+  menu_select_cache_versions
+  if "$ACTIVATE" ; then
+      activate "$g_active_yarn"
+  fi
+else
+  while test $# -ne 0; do
+    case "$1" in
+      -h|--help|help) display_help; exit ;;
+      -V|-v|--version) display_y_version ;;
+      rm|remove) shift; remove_versions "$@"; exit ;;
+      ls|list) display_versions_paths; exit ;;
+      latest) yarn_install latest; exit ;;
+      *) yarn_install "$1"; exit ;;
+    esac
+    shift
+  done
+fi

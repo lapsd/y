@@ -1,0 +1,42 @@
+{
+  "name": "@danou/y",
+  "description": "Interactively Manage All Your Yarn Versions",
+  "version": "1.0.10",
+  "author": "Daniel Lapides <lapides.daniel@gmail.com>",
+  "homepage": "https://github.com/daniellapides/y",
+  "bugs": {
+    "url": "https://github.com/daniellapides/y/issues"
+  },
+  "keywords": [
+    "yvm",
+    "yarn",
+    "version",
+    "manager",
+    "switcher",
+    "binary",
+    "env"
+  ],
+  "bin": {
+    "y": "./bin/y"
+  },
+  "files": [
+    "bin/y"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/daniellapides/y.git"
+  },
+  "preferGlobal": true,
+  "os": [
+    "!win32"
+  ],
+  "engines": {
+    "node": "*"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "npm publish"
+  },
+  "dependencies": {}
+}
