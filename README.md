@@ -1,9 +1,9 @@
 # `y` – Interactively manage your Yarn versions
 
-[![npm](https://img.shields.io/npm/dt/n.svg?style=flat-square)](https://www.npmjs.com/package/@danou/y)
-[![npm](https://img.shields.io/npm/dm/n.svg?style=flat-square)](https://www.npmjs.com/package/@danou/y)
-[![npm](https://img.shields.io/npm/v/n.svg?style=flat-square)](https://www.npmjs.com/package/@danou/y)
-[![npm](https://img.shields.io/npm/l/n.svg?style=flat-square)](https://www.npmjs.com/package/@danou/y)
+<!-- [![npm](https://img.shields.io/npm/dt/@lapsd/y.svg?style=flat-square)](https://www.npmjs.com/package/@lapsd/y) -->
+<!-- [![npm](https://img.shields.io/npm/dm/@lapsd/y.svg?style=flat-square)](https://www.npmjs.com/package/@lapsd/y) -->
+[![npm](https://img.shields.io/npm/v/@lapsd/y.svg?style=flat-square)](https://www.npmjs.com/package/@lapsd/y)
+[![npm](https://img.shields.io/npm/l/@lapsd/y.svg?style=flat-square)](https://www.npmjs.com/package/@lapsd/y)
 
 <p align="center">
   <a href="https://nodejs.org/">
