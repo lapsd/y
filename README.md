@@ -1,15 +1,11 @@
 # `y` – Interactively manage your Yarn versions
 
-<!-- [![npm](https://img.shields.io/npm/dt/@lapsd/y.svg?style=flat-square)](https://www.npmjs.com/package/@lapsd/y) -->
-<!-- [![npm](https://img.shields.io/npm/dm/@lapsd/y.svg?style=flat-square)](https://www.npmjs.com/package/@lapsd/y) -->
+[![npm](https://img.shields.io/npm/dt/@lapsd/y.svg?style=flat-square)](https://www.npmjs.com/package/@lapsd/y)
+[![npm](https://img.shields.io/npm/dm/@lapsd/y.svg?style=flat-square)](https://www.npmjs.com/package/@lapsd/y)
 [![npm](https://img.shields.io/npm/v/@lapsd/y.svg?style=flat-square)](https://www.npmjs.com/package/@lapsd/y)
 [![npm](https://img.shields.io/npm/l/@lapsd/y.svg?style=flat-square)](https://www.npmjs.com/package/@lapsd/y)
 
-<p align="center">
-  <a href="https://nodejs.org/">
-    <img alt="Node.js" src="./y-logo.png" width="200" />
-  </a>
-</p>
+<p align="center"><img alt="Node.js" src="./y-logo.png" width="200" /></p>
 
 ## Installation
 
