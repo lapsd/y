@@ -41,18 +41,8 @@ Removing all cached versions except the current version:
 
     y prune
 
-## Remove the installed version (coming soon)
-
-This can be useful to revert to the system version of yarn (if in a different location), or if you no longer wish to use yarn, or are switching to a different way of managing it:
-
-    y uninstall
-
 ## For more help
 
 Check all available commands:
 
     y --help
-
-## TODOs
-
-- [ ] Add command: `y uninstall`
