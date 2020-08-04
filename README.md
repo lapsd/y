@@ -25,7 +25,7 @@ There are a variety of ways of specifying the target yarn version for `y` comman
 
 Numeric version numbers need to be complete:
 
-- `1.17.3`
+- `1.22.4`
 
 There are labels for versions:
 
@@ -37,7 +37,7 @@ Remove some cached versions:
 
     y rm 0.27.5
 
-Removing all cached versions except the current version (coming soon):
+Removing all cached versions except the current version:
 
     y prune
 
@@ -56,5 +56,3 @@ Check all available commands:
 ## TODOs
 
 - [ ] Add command: `y uninstall`
-- [ ] Add command: `y prune`
-- [ ] Add security step when downloading a new Yarn version
