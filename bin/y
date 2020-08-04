@@ -2,7 +2,7 @@
 
 readonly Y_FOLDER=$HOME/.y
 readonly CACHE_DIR=$Y_FOLDER/cache
-readonly VERSION="0.0.1"
+readonly VERSION="1.0.18"
 
 ##### YARN INSTALL
 
@@ -151,9 +151,13 @@ function get_latest_yarn_version() {
 }
 
 yarn_install() {
-    local version_to_install="$version"
+    local version_to_install="$1"
     local is_latest=false
     local is_new=false
+
+    if [[ $version_to_install == "version" ]]; then
+      version_to_install="$version"
+    fi
 
     if [[ $version == "latest" ]]; then
         version_to_install="$(get_latest_yarn_version $version_to_install)"
@@ -545,8 +549,9 @@ else
       -V|-v|--version) display_y_version ;;
       rm|remove) shift; remove_versions "$@"; exit ;;
       ls|list) display_versions_paths; exit ;;
-      latest) yarn_install latest; exit ;;
       prune) yarn_prune; exit ;;
+      latest) yarn_install latest; exit ;;
+      install) yarn_install "$2"; exit ;;
       *) yarn_install "$1"; exit ;;
     esac
     shift
