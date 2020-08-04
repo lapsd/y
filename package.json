@@ -33,6 +33,7 @@
   "engines": {
     "node": "*"
   },
+  "install": "npm i -g @lapsd/y",
   "license": "MIT",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

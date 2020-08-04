@@ -126,16 +126,17 @@ function get_latest_yarn_version() {
     local version
     local formatted_version=""
     local len
+
     version=$(yarn info yarn@latest |
-        grep -E "{ $1: (.+)," |
-        sed 's|{ latest:||' |
+        grep -E "$1(.+)," |
+        sed 's|latest:||' |
         sed 's| ||g' |
         sed 's|,||g' |
         sed "s|'||g" |
         sed "s/\[32m//g" |
         sed "s/\[39m//g" |
         sed "s/ //g")
-
+        
     len=${#version}
     for ((i = 0; i < $len; i++)); do
         local next
@@ -155,7 +156,7 @@ yarn_install() {
     local is_new=false
 
     if [[ $version == "latest" ]]; then
-        version_to_install="$(get_latest_yarn_version $version)"
+        version_to_install="$(get_latest_yarn_version $version_to_install)"
         is_latest=true
     fi
 
