@@ -136,7 +136,7 @@ function get_latest_yarn_version() {
         sed "s/\[32m//g" |
         sed "s/\[39m//g" |
         sed "s/ //g")
-        
+
     len=${#version}
     for ((i = 0; i < $len; i++)); do
         local next
@@ -191,6 +191,25 @@ yarn_install() {
     else
         printf "$green> Successfully activated yarn $version!$reset\n"
     fi
+}
+
+yarn_prune() {
+  local installed_version=$(yarn --version)
+  for version in $(display_versions_paths); do
+    if [[ "$installed_version" != "$version" ]]; then
+      if [[ -n "${version}" ]]; then
+        local dir="${CACHE_DIR}/${version}.tar.gz"
+        if [[ -s "${dir}" ]]; then
+          rm -rf "${dir}"
+          echo "${version} was removed from cache"
+        else
+          echo "${version} not in downloads cache"
+        fi
+      else
+        echo "No version found for '$1'"
+      fi
+    fi
+  done
 }
 
 ##### YARN INSTALL END
@@ -527,6 +546,7 @@ else
       rm|remove) shift; remove_versions "$@"; exit ;;
       ls|list) display_versions_paths; exit ;;
       latest) yarn_install latest; exit ;;
+      prune) yarn_prune; exit ;;
       *) yarn_install "$1"; exit ;;
     esac
     shift
